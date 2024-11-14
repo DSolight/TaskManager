@@ -11,6 +11,8 @@ export function initializeTaskManager(userLogin) {
     let inputElement = null;
     let dropdownElement = null;
     let isEditingFinished = false;
+    
+    updateButtonState();
 
     addButtonReady.addEventListener("click", () => {
         if (!inputElement) {
@@ -27,7 +29,7 @@ export function initializeTaskManager(userLogin) {
         button.textContent = "Submit";
 
         inputElement.removeEventListener("blur", finishEdit); // Удаляем старый обработчик перед добавлением
-        inputElement.addEventListener("blur", finishEdit);
+        inputElement.addEventListener("blur", () => finishEdit(container, button));
         inputElement.removeEventListener("keypress", handleKeyPress); // Удаляем старый обработчик
         inputElement.addEventListener("keypress", (event) => handleKeyPress(event, container, button)); // Добавляем новый
     }
@@ -64,24 +66,29 @@ export function initializeTaskManager(userLogin) {
         button.disabled = true;
 
         setTimeout(() => {
-            button.disabled = false; // Включаем кнопку снова через 1 секунду
-        }, 1000);
-        setTimeout(() => {
             isEditingFinished = false; // Сбрасываем флаг для дальнейших операций
         }, 0);
+        setTimeout(() => {
+            button.disabled = false; // Включаем кнопку снова через 1 секунду
+        }, 1000);
+
+        updateButtonState();
     }
 
     addButtonInProgress.addEventListener("click", () => {
-        createSelectDropdown();
+        if (!dropdownElement) {
+            createDropdown();
+        } else {
+            // Если дропдаун уже существует, показываем его
+            dropdownElement.style.display = dropdownElement.style.display === "none" ? "block" : "none";
+        }
     });
 
-    function createSelectDropdown() {
-        if (dropdownElement) {
-            inProgressContainer.removeChild(dropdownElement);
-        }
-
+    function createDropdown() {
         dropdownElement = document.createElement("select");
-         // Заполнение дропдауна задачами из Ready
+        dropdownElement.style.display = "block"; // Отображаем дропдаун
+
+        // Заполнение дропдауна задачами из Ready
         const tasks = Array.from(readyContainer.getElementsByTagName("p"));
         tasks.forEach(task => {
             const option = document.createElement("option");
@@ -90,20 +97,27 @@ export function initializeTaskManager(userLogin) {
             dropdownElement.appendChild(option);
         });
 
-        const submitButton = document.createElement("button");
-        submitButton.textContent = "Submit";
-        submitButton.addEventListener("click", () => {
-            const selectedTask = dropdownElement.value;
-            if (selectedTask) {
-                moveToInProgress(selectedTask);
-                inProgressContainer.removeChild(dropdownElement);
-                inProgressContainer.removeChild(submitButton);
-            }
-        });
+        addButtonInProgress.textContent = "Submit"; // Меняем текст кнопки
+        // Убираем слушатель события, чтобы избежать повторного добавления
+        addButtonInProgress.removeEventListener("click", handleSubmitClick);
+        addButtonInProgress.addEventListener("click", handleSubmitClick);
 
         inProgressContainer.appendChild(dropdownElement);
-        inProgressContainer.appendChild(submitButton);
-        addButtonInProgress.textContent = "Submit";
+    }
+
+    function handleSubmitClick() {
+        const selectedTask = dropdownElement.value;
+        if (selectedTask) {
+            moveToInProgress(selectedTask);
+            removeDropdown();
+        }
+    }
+
+    function removeDropdown() {
+        if (dropdownElement && inProgressContainer.contains(dropdownElement)) {
+            inProgressContainer.removeChild(dropdownElement);
+        }
+        addButtonInProgress.textContent = "+ Add card"; // Возвращаем кнопке стандартное название
     }
 
     function moveToInProgress(taskTitle) {
@@ -112,17 +126,48 @@ export function initializeTaskManager(userLogin) {
         taskElement.textContent = taskTitle;
         inProgressContainer.appendChild(taskElement);
 
-        // Удаление задачи из Ready, но не из localStorage
+        // Удаление задачи из Ready (не из localStorage)
         const readyTasks = Array.from(readyContainer.getElementsByTagName("p"));
         const taskToRemove = readyTasks.find(task => task.textContent === taskTitle);
         if (taskToRemove) {
             readyContainer.removeChild(taskToRemove);
         }
+
+        updateButtonState(); // Обновляем состояние кнопок
     }
 
+    function updateButtonState() {
+        const readyTasks = readyContainer.getElementsByTagName("p");
+        const hasTasksInReady = readyTasks.length > 0;
+
+        // Обновляем состояние кнопки для In Progress
+        if (hasTasksInReady) {
+            addButtonInProgress.classList.remove("button-disabled");
+            addButtonInProgress.classList.add("button-active");
+            addButtonInProgress.disabled = false;
+        } else {
+            addButtonInProgress.classList.add("button-disabled");
+            addButtonInProgress.classList.remove("button-active");
+            addButtonInProgress.disabled = true; // Отключаем кнопку если нет задач в Ready
+        }
+    }
+
+    function loadTasks(userLogin) {
+        const tasks = Task.getTasksByUser(userLogin);
+        tasks.forEach((task) => {
+            const taskElement = document.createElement("p");
+            taskElement.textContent = task.title;
+            readyContainer.appendChild(taskElement);
+        });
+    }
+
+
+
     loadTasks(userLogin);
+    updateButtonState()
 }
 
+/* 
 function loadTasks(userLogin) {
     const tasks = Task.getTasksByUser(userLogin);
     tasks.forEach((task) => {
@@ -131,3 +176,4 @@ function loadTasks(userLogin) {
         document.querySelector(".todo-item__task").appendChild(taskElement);
     });
 }
+*/

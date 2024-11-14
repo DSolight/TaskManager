@@ -20,6 +20,18 @@ p {
     margin-bottom: 0;
 }
 
+.button-disabled {
+    background-color: #ccc; /* Цвет фона для неактивной кнопки */
+    color: #777; /* Цвет текста для неактивной кнопки */
+    cursor: not-allowed; /* Указатель для неактивной кнопки */
+}
+
+.button-active {
+    background-color: #007bff; /* Цвет фона для активной кнопки */
+    color: #fff; /* Цвет текста для активной кнопки */
+    cursor: pointer; /* Указатель для активной кнопки */
+}
+
 .container {
     margin: 0;
     padding: 0;
