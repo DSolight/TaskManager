@@ -11,7 +11,7 @@ export function initializeTaskManager(userLogin) {
     let inputElement = null;
     let dropdownElement = null;
     let isEditingFinished = false;
-    
+
     updateButtonState();
 
     addButtonReady.addEventListener("click", () => {
@@ -75,48 +75,52 @@ export function initializeTaskManager(userLogin) {
         updateButtonState();
     }
 
-    addButtonInProgress.addEventListener("click", () => {
-        if (!dropdownElement) {
-            createDropdown();
-        } else {
-            // Если дропдаун уже существует, показываем его
-            dropdownElement.style.display = dropdownElement.style.display === "none" ? "block" : "none";
-        }
+    // Обработчик для кнопки добавления в In Progress
+addButtonInProgress.addEventListener("click", () => {
+    createDropdown(); // Создание нового дропдауна
+});
+
+function createDropdown() {
+    // Проверяем, существует ли уже дропдаун и удаляем его если это так
+    if (dropdownElement) {
+        removeDropdown(); // Удалим предыдущий дропдаун, если он был
+    }
+
+    dropdownElement = document.createElement("select");
+    dropdownElement.style.display = "block";
+
+    // Заполнение дропдауна задачами из Ready
+    const tasks = Array.from(readyContainer.getElementsByTagName("p"));
+    tasks.forEach(task => {
+        const option = document.createElement("option");
+        option.value = task.textContent;
+        option.textContent = task.textContent;
+        dropdownElement.appendChild(option);
     });
 
-    function createDropdown() {
-        dropdownElement = document.createElement("select");
-        dropdownElement.style.display = "block"; // Отображаем дропдаун
+    // Меняем текст кнопки на "Submit"
+    addButtonInProgress.textContent = "Submit";
 
-        // Заполнение дропдауна задачами из Ready
-        const tasks = Array.from(readyContainer.getElementsByTagName("p"));
-        tasks.forEach(task => {
-            const option = document.createElement("option");
-            option.value = task.textContent;
-            option.textContent = task.textContent;
-            dropdownElement.appendChild(option);
-        });
+    // Добавление обработчика для добавления задачи
+    addButtonInProgress.removeEventListener("click", handleAddTask); // Убираем старый обработчик, если он существует
+    addButtonInProgress.addEventListener("click", handleAddTask);
 
-        addButtonInProgress.textContent = "Submit"; // Меняем текст кнопки
-        // Убираем слушатель события, чтобы избежать повторного добавления
-        addButtonInProgress.removeEventListener("click", handleSubmitClick);
-        addButtonInProgress.addEventListener("click", handleSubmitClick);
+    inProgressContainer.appendChild(dropdownElement);
+}
 
-        inProgressContainer.appendChild(dropdownElement);
+function handleAddTask() {
+    const selectedTask = dropdownElement.value;
+    if (selectedTask) {
+        moveToInProgress(selectedTask); // Добавляем задачу в блок In Progress
+        removeDropdown(); // Убираем дропдаун после выбора
     }
-
-    function handleSubmitClick() {
-        const selectedTask = dropdownElement.value;
-        if (selectedTask) {
-            moveToInProgress(selectedTask);
-            removeDropdown();
-        }
-    }
+}
 
     function removeDropdown() {
         if (dropdownElement && inProgressContainer.contains(dropdownElement)) {
             inProgressContainer.removeChild(dropdownElement);
         }
+        dropdownElement = null; // Сбрасываем ссылку на дропдаун
         addButtonInProgress.textContent = "+ Add card"; // Возвращаем кнопке стандартное название
     }
 
