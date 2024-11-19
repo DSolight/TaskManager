@@ -1,4 +1,5 @@
 import { Task } from "../models/Task";
+import { updateTaskCount } from "./updateTaskCount";
 
 export function initializeTaskManager(userLogin) {
     const readyContainer = document.getElementById("readyTasks");
@@ -58,7 +59,15 @@ export function initializeTaskManager(userLogin) {
 
             const taskElement = document.createElement("p");
             taskElement.textContent = taskContent;
+            taskElement.setAttribute("draggable", "true");
+            taskElement.classList.add("draggable");
+            taskElement.setAttribute("data-task", taskContent);
             container.appendChild(taskElement);
+
+            taskElement.addEventListener("dragstart", (e) => {
+                e.dataTransfer.setData("text/plain", taskElement.textContent);
+                e.dataTransfer.effectAllowed = "move"; // Разрешаем перемещение
+            });
         }
 
         // Удаление input, проверяем наличие в родителе
@@ -78,6 +87,7 @@ export function initializeTaskManager(userLogin) {
         }, 500);
 
         updateButtonState();
+        updateTaskCount(userLogin);
     }
 
     // Обработчик для кнопки добавления в In Progress
@@ -146,10 +156,15 @@ export function initializeTaskManager(userLogin) {
 
             if (selectedTaskObj && selectedTaskObj.status === "ready") {
                 removeDropdown(inProgressContainer, addButtonInProgress);
-            } else if (selectedTaskObj && selectedTaskObj.status === "inProgress") {
+            } else if (
+                selectedTaskObj &&
+                selectedTaskObj.status === "inProgress"
+            ) {
                 removeDropdown(finishedContainer, addButtonFinished);
             }
         }
+
+        updateTaskCount(userLogin);
     }
 
     function removeDropdown(container, button) {
@@ -177,7 +192,17 @@ export function initializeTaskManager(userLogin) {
         // Создаем элемент в In Progress
         const taskElement = document.createElement("p");
         taskElement.textContent = taskTitle;
+        taskElement.setAttribute("draggable", "true");
+        taskElement.classList.add("draggable");
+        taskElement.setAttribute("data-task", taskTitle);
+
         inProgressContainer.appendChild(taskElement);
+
+    // Устанавливаем обработчик dragstart
+        taskElement.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/plain", taskElement.textContent);
+            e.dataTransfer.effectAllowed = "move"; // Разрешаем перемещение
+        });
 
         // Обновляем статус задачи
         Task.updateTaskStatus(taskTitle, userLogin, "inProgress"); // Обновляем статус задачи
@@ -192,13 +217,23 @@ export function initializeTaskManager(userLogin) {
         }
 
         updateButtonState(); // Обновляем состояние кнопок
+        updateTaskCount(userLogin); // Обновляем счетчик задач
     }
 
     function moveToFinished(taskTitle) {
         // Создаем элемент в Finished
         const taskElement = document.createElement("p");
         taskElement.textContent = taskTitle;
+        taskElement.setAttribute("draggable", "true");
+        taskElement.classList.add("draggable");
+        taskElement.setAttribute("data-task", taskTitle);
+
         finishedContainer.appendChild(taskElement);
+        // Устанавливаем обработчик dragstart
+        taskElement.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/plain", taskElement.textContent);
+            e.dataTransfer.effectAllowed = "move"; // Разрешаем перемещение
+        });
 
         // Обновляем статус задачи
         Task.updateTaskStatus(taskTitle, userLogin, "finished"); // Обновляем статус задачи
@@ -215,6 +250,7 @@ export function initializeTaskManager(userLogin) {
         }
 
         updateButtonState(); // Обновляем состояние кнопок
+        updateTaskCount(userLogin);
     }
 
     function updateButtonState() {
@@ -251,6 +287,15 @@ export function initializeTaskManager(userLogin) {
         tasks.forEach((task) => {
             const taskElement = document.createElement("p");
             taskElement.textContent = task.title;
+            taskElement.setAttribute("draggable", "true");
+            taskElement.classList.add("draggable");
+            taskElement.setAttribute("data-task", task.title); // Устанавливаем data-task
+
+            // Устанавливаем обработчик dragstart
+            taskElement.addEventListener("dragstart", (e) => {
+                e.dataTransfer.setData("text/plain", taskElement.textContent);
+                e.dataTransfer.effectAllowed = "move"; // Разрешаем перемещение
+            });
 
             if (task.status === "ready") {
                 readyContainer.appendChild(taskElement); // Добавляем в Ready
@@ -260,9 +305,48 @@ export function initializeTaskManager(userLogin) {
                 finishedContainer.appendChild(taskElement); // Добавляем в Finished
             }
         });
+
         updateButtonState();
+        updateTaskCount(userLogin);
     }
 
-    // Вызов функции в инициализации
-    loadTasks(userLogin);
-}
+    function initializeDragAndDrop() {
+        const containers = [
+            document.getElementById("readyTasks"),
+            document.getElementById("inProgressTasks"),
+            document.getElementById("finishedTasks"),
+        ];
+
+        containers.forEach((container) => {
+            container.addEventListener("dragover", (e) => {
+                e.preventDefault(); // Позволяем сбрасывать элементы
+            });
+
+            container.addEventListener("drop", (e) => {
+                e.preventDefault();
+                const taskTitle = e.dataTransfer.getData("text/plain"); // Получаем название задачи
+                const taskElement = document.querySelector(`p[data-task="${taskTitle}"]`); // Находим элемент задачи
+
+                if (taskElement) {
+                    // Перемещаем задачу в новый контейнер
+                    container.appendChild(taskElement);
+
+                    // Обновляем статус задачи в модели
+                    if (container.id === "readyTasks") {
+                        Task.updateTaskStatus(taskTitle, userLogin, "ready");
+                    } else if (container.id === "inProgressTasks") {
+                        Task.updateTaskStatus(taskTitle, userLogin, "inProgress");
+                    } else if (container.id === "finishedTasks") {
+                        Task.updateTaskStatus(taskTitle, userLogin, "finished");
+                    }
+                    updateTaskCount(userLogin);
+                }
+            });
+        });
+         // Обновляем счетчик задач
+    }
+
+        // Вызов функции в инициализации
+        loadTasks(userLogin);
+        initializeDragAndDrop();
+    }

@@ -7,6 +7,7 @@ import { generateTestUser } from "./utils";
 import { State } from "./state";
 import { authUser } from "./services/auth";
 import { initializeTaskManager } from "./services/addTask";
+import { updateTaskCount } from "./services/updateTaskCount";
 
 export const appState = new State();
 
@@ -28,5 +29,6 @@ loginForm.addEventListener("submit", function (e) {
 
   if (authUser(login, password)) {
     initializeTaskManager(login);
+    updateTaskCount(login)
   }
 });
