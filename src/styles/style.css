@@ -6,6 +6,10 @@
     box-sizing: content-box;
 }
 
+html, body {
+    height: 100%;
+}
+
 p {
     margin: 0;
 }
@@ -22,16 +26,22 @@ p {
     margin-bottom: 0;
 }
 
+.button {
+    color: #4d586d;
+    font-family: Roboto;
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+}
+
 .button-disabled {
-    background-color: #ccc; /* Цвет фона для неактивной кнопки */
-    color: #777; /* Цвет текста для неактивной кнопки */
-    cursor: not-allowed; /* Указатель для неактивной кнопки */
+    color: #d3d3d3;
+    cursor: not-allowed;
 }
 
 .button-active {
-    background-color: #007bff; /* Цвет фона для активной кнопки */
-    color: #fff; /* Цвет текста для активной кнопки */
-    cursor: pointer; /* Указатель для активной кнопки */
+    cursor: pointer;
 }
 
 .container {
@@ -42,13 +52,13 @@ p {
 
 .todo-container {
     background: #0079bf;
-    min-height: 92vh;
+    min-height: calc(100vh - 114px);
     margin: 0;
     padding: 0;
 }
 
 .todo {
-    padding-top: 20px;
+    padding: 20px 0;
     position: relative;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -121,12 +131,6 @@ p {
 
 .todo-item__button-add {
     border: none;
-    color: #5e6c84;
-    font-family: Roboto;
-    font-size: 18px;
-    font-style: normal;
-    font-weight: 400;
-    line-height: normal;
 }
 
 .footer-container {
@@ -142,6 +146,13 @@ p {
     justify-content: space-between;
     align-items: center;
 }
+
+.empty-indicator {
+    color: #888; /* Цвет текста для индикатора */
+    text-align: center; /* Выравнивание по центру */
+    margin: 20px 0; /* Отступы */
+}
+
 .tasks {
     padding: 17px 21px;
     display: flex;

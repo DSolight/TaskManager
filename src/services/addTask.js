@@ -156,10 +156,7 @@ export function initializeTaskManager(userLogin) {
 
             if (selectedTaskObj && selectedTaskObj.status === "ready") {
                 removeDropdown(inProgressContainer, addButtonInProgress);
-            } else if (
-                selectedTaskObj &&
-                selectedTaskObj.status === "inProgress"
-            ) {
+            } else if (selectedTaskObj && selectedTaskObj.status === "inProgress") {
                 removeDropdown(finishedContainer, addButtonFinished);
             }
         }
@@ -167,24 +164,34 @@ export function initializeTaskManager(userLogin) {
         updateTaskCount(userLogin);
     }
 
-    function removeDropdown(container, button) {
-        if (dropdownElement && container.contains(dropdownElement)) {
-            container.removeChild(dropdownElement);
+    function removeDropdown({
+        containers = [finishedContainer, inProgressContainer],
+        buttons = [addButtonFinished, addButtonInProgress]
+    } = {}) {
+        if (dropdownElement) {
+            containers.forEach((container, index) => {
+                if (container.contains(dropdownElement)) {
+                    container.removeChild(dropdownElement);
+                    buttons[index].textContent = "+ Add card";
+                }
+            });
+            dropdownElement = null;
         }
-        dropdownElement = null; // Сбрасываем ссылку на дропдаун
-        button.textContent = "+ Add card"; // Возвращаем кнопке стандартное название
     }
 
     // Использование функции removeDropdown в обработчиках
     document.addEventListener("mousedown", (event) => {
-        if (
-            dropdownElement &&
-            !dropdownElement.contains(event.target) &&
-            !addButtonInProgress.contains(event.target) &&
-            !addButtonFinished.contains(event.target) // Учтите кнопку Finished
-        ) {
-            removeDropdown(inProgressContainer, addButtonInProgress); // Удаление из In Progress
-            removeDropdown(finishedContainer, addButtonFinished); // Удаление из Finished
+        // Проверяем, открыт ли дропдаун
+        if (dropdownElement) {
+            // Если кликнули вне дропдауна и вне кнопок
+            if (
+                dropdownElement.contains(event.target) &&
+                !dropdownElement.contains(event.target) &&
+                !addButtonInProgress.contains(event.target) &&
+                !addButtonFinished.contains(event.target)
+            ) {
+                removeDropdown();
+            }
         }
     });
 
@@ -239,9 +246,7 @@ export function initializeTaskManager(userLogin) {
         Task.updateTaskStatus(taskTitle, userLogin, "finished"); // Обновляем статус задачи
 
         // Удаляем задачу из блока In Progress
-        const inProgressTasks = Array.from(
-            inProgressContainer.getElementsByTagName("p")
-        );
+        const inProgressTasks = Array.from(inProgressContainer.getElementsByTagName("p"));
         const taskToRemove = inProgressTasks.find(
             (task) => task.textContent === taskTitle
         );
