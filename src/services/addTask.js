@@ -262,7 +262,8 @@ export function initializeTaskManager(userLogin) {
 
     function loadTasks(userLogin) {
         const tasks = Task.getTasksByUser (userLogin);
-        tasks.forEach((task) => const taskElement = document.createElement("p");
+        tasks.forEach((task) => {
+            const taskElement = document.createElement("p");
             taskElement.textContent = task.title;
             taskElement.setAttribute("draggable", "true");
             taskElement.classList.add("draggable");
@@ -292,7 +293,6 @@ export function initializeTaskManager(userLogin) {
             inProgressContainer,
             finishedContainer,
         ];
-
         containers.forEach((container) => {
             container.addEventListener("dragover", (e) => {
                 e.preventDefault(); // Позволяем сбрасывать элементы
