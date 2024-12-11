@@ -30,27 +30,23 @@ export function initializeTaskManager(userLogin) {
 
         button.textContent = "Submit";
 
-        inputElement.removeEventListener("blur", finishEdit); // Удаляем старый обработчик перед добавлением
-        inputElement.addEventListener("blur", () =>
-            finishEdit(container, button)
-        );
-        inputElement.removeEventListener("keypress", handleKeyPress); // Удаляем старый обработчик
-        inputElement.addEventListener("keypress", (event) =>
-            handleKeyPress(event, container, button)
-        ); // Добавляем новый
+        inputElement.removeEventListener("blur", finishEdit);
+        inputElement.addEventListener("blur", () => finishEdit(container, button));
+        inputElement.removeEventListener("keypress", handleKeyPress);
+        inputElement.addEventListener("keypress", (event) => handleKeyPress(event, container, button));
     }
 
     function handleKeyPress(event, container, button) {
         if (event.key === "Enter") {
             finishEdit(container, button);
-            event.preventDefault(); // Предотвращаем дальнейшие действия по умолчанию
+            event.preventDefault();
         }
     }
 
     function finishEdit(container, button) {
         if (!inputElement || isEditingFinished) return;
 
-        isEditingFinished = true; // Защита от повторного запуска
+        isEditingFinished = true;
 
         const taskContent = inputElement.value.trim();
         if (taskContent) {
@@ -66,11 +62,13 @@ export function initializeTaskManager(userLogin) {
 
             taskElement.addEventListener("dragstart", (e) => {
                 e.dataTransfer.setData("text/plain", taskElement.textContent);
-                e.dataTransfer.effectAllowed = "move"; // Разрешаем перемещение
+                e.dataTransfer.effectAllowed = "move";
             });
+
+            // Добавляем обработчики для dragover и drop
+            initializeDragAndDrop(container);
         }
 
-        // Удаление input, проверяем наличие в родителе
         if (container.contains(inputElement)) {
             container.removeChild(inputElement);
         }
@@ -80,10 +78,10 @@ export function initializeTaskManager(userLogin) {
         button.disabled = true;
 
         setTimeout(() => {
-            isEditingFinished = false; // Сбрасываем флаг для дальнейших операций
+            isEditingFinished = false;
         }, 0);
         setTimeout(() => {
-            button.disabled = false; // Включаем кнопку снова
+            button.disabled = false;
         }, 500);
 
         updateButtonState();
@@ -93,33 +91,24 @@ export function initializeTaskManager(userLogin) {
     // Обработчик для кнопки добавления в In Progress
     addButtonInProgress.addEventListener("click", () => {
         if (!dropdownElement) {
-            createDropdown(
-                inProgressContainer,
-                addButtonInProgress,
-                readyContainer
-            ); // Заполнение из контейнера Ready
+            createDropdown(inProgressContainer, addButtonInProgress, readyContainer);
         }
     });
 
     addButtonFinished.addEventListener("click", () => {
         if (!dropdownElement) {
-            createDropdown(
-                finishedContainer,
-                addButtonFinished,
-                inProgressContainer
-            ); // Заполнение из контейнера In Progress
+            createDropdown(finishedContainer, addButtonFinished, inProgressContainer);
         }
     });
 
     function createDropdown(container, button, taskSource) {
         if (dropdownElement) {
-            removeDropdown(container, button); // Убираем предыдущий дропдаун, если он есть
+            removeDropdown(container, button);
         }
 
-        dropdownElement = document.createElement("select"); // Отображаем дропдаун
+        dropdownElement = document.createElement("select");
         dropdownElement.focus();
 
-        // Заполнение дропдауна задачами из указанного источника
         const tasks = Array.from(taskSource.getElementsByTagName("p"));
         tasks.forEach((task) => {
             const option = document.createElement("option");
@@ -128,20 +117,16 @@ export function initializeTaskManager(userLogin) {
             dropdownElement.appendChild(option);
         });
 
-        // Меняем текст кнопки на "Submit"
         button.textContent = "Submit";
-
-        // Убираем старый обработчик и добавляем новый
-        button.removeEventListener("click", handleAddTask); // Убираем старый обработчик
-        button.addEventListener("click", handleAddTask); // Добавляем новый
-
+        button.removeEventListener("click", handleAddTask);
+        button.addEventListener("click", handleAddTask);
         container.appendChild(dropdownElement);
     }
 
     function handleAddTask() {
         const selectedTask = dropdownElement.value;
         if (selectedTask) {
-            const allTasks = Task.getTasksByUser(userLogin);
+            const allTasks = Task.getTasksByUser (userLogin);
             const selectedTaskObj = allTasks.find(
                 (task) => task.title === selectedTask
             );
@@ -179,13 +164,9 @@ export function initializeTaskManager(userLogin) {
         }
     }
 
-    // Использование функции removeDropdown в обработчиках
     document.addEventListener("mousedown", (event) => {
-        // Проверяем, открыт ли дропдаун
         if (dropdownElement) {
-            // Если кликнули вне дропдауна и вне кнопок
             if (
-                dropdownElement.contains(event.target) &&
                 !dropdownElement.contains(event.target) &&
                 !addButtonInProgress.contains(event.target) &&
                 !addButtonFinished.contains(event.target)
@@ -196,7 +177,6 @@ export function initializeTaskManager(userLogin) {
     });
 
     function moveToInProgress(taskTitle) {
-        // Создаем элемент в In Progress
         const taskElement = document.createElement("p");
         taskElement.textContent = taskTitle;
         taskElement.setAttribute("draggable", "true");
@@ -205,16 +185,13 @@ export function initializeTaskManager(userLogin) {
 
         inProgressContainer.appendChild(taskElement);
 
-    // Устанавливаем обработчик dragstart
         taskElement.addEventListener("dragstart", (e) => {
             e.dataTransfer.setData("text/plain", taskElement.textContent);
-            e.dataTransfer.effectAllowed = "move"; // Разрешаем перемещение
+            e.dataTransfer.effectAllowed = "move";
         });
 
-        // Обновляем статус задачи
-        Task.updateTaskStatus(taskTitle, userLogin, "inProgress"); // Обновляем статус задачи
+        Task.updateTaskStatus(taskTitle, userLogin, "inProgress");
 
-        // Удаляем задачу из блока Ready
         const readyTasks = Array.from(readyContainer.getElementsByTagName("p"));
         const taskToRemove = readyTasks.find(
             (task) => task.textContent === taskTitle
@@ -223,12 +200,11 @@ export function initializeTaskManager(userLogin) {
             readyContainer.removeChild(taskToRemove);
         }
 
-        updateButtonState(); // Обновляем состояние кнопок
-        updateTaskCount(userLogin); // Обновляем счетчик задач
+        updateButtonState();
+        updateTaskCount(userLogin);
     }
 
     function moveToFinished(taskTitle) {
-        // Создаем элемент в Finished
         const taskElement = document.createElement("p");
         taskElement.textContent = taskTitle;
         taskElement.setAttribute("draggable", "true");
@@ -236,16 +212,14 @@ export function initializeTaskManager(userLogin) {
         taskElement.setAttribute("data-task", taskTitle);
 
         finishedContainer.appendChild(taskElement);
-        // Устанавливаем обработчик dragstart
+
         taskElement.addEventListener("dragstart", (e) => {
             e.dataTransfer.setData("text/plain", taskElement.textContent);
-            e.dataTransfer.effectAllowed = "move"; // Разрешаем перемещение
+            e.dataTransfer.effectAllowed = "move";
         });
 
-        // Обновляем статус задачи
-        Task.updateTaskStatus(taskTitle, userLogin, "finished"); // Обновляем статус задачи
+        Task.updateTaskStatus(taskTitle, userLogin, "finished");
 
-        // Удаляем задачу из блока In Progress
         const inProgressTasks = Array.from(inProgressContainer.getElementsByTagName("p"));
         const taskToRemove = inProgressTasks.find(
             (task) => task.textContent === taskTitle
@@ -254,7 +228,7 @@ export function initializeTaskManager(userLogin) {
             inProgressContainer.removeChild(taskToRemove);
         }
 
-        updateButtonState(); // Обновляем состояние кнопок
+        updateButtonState();
         updateTaskCount(userLogin);
     }
 
@@ -262,7 +236,6 @@ export function initializeTaskManager(userLogin) {
         const readyTasks = readyContainer.getElementsByTagName("p");
         const hasTasksInReady = readyTasks.length > 0;
 
-        // Обновляем состояние кнопки для In Progress
         if (hasTasksInReady) {
             addButtonInProgress.classList.remove("button-disabled");
             addButtonInProgress.classList.add("button-active");
@@ -270,44 +243,42 @@ export function initializeTaskManager(userLogin) {
         } else {
             addButtonInProgress.classList.add("button-disabled");
             addButtonInProgress.classList.remove("button-active");
-            addButtonInProgress.disabled = true; // Отключаем кнопку если нет задач в Ready
+            addButtonInProgress.disabled = true;
         }
-        // Обновляем состояние кнопки для Finished
+
         const inProgressTasks = inProgressContainer.getElementsByTagName("p");
         const hasTasksInProgress = inProgressTasks.length > 0;
 
         if (hasTasksInProgress) {
             addButtonFinished.classList.remove("button-disabled");
             addButtonFinished.classList.add("button-active");
-            addButtonFinished.disabled = false; // Включаем кнопку, если есть задачи в In Progress
+            addButtonFinished.disabled = false;
         } else {
             addButtonFinished.classList.add("button-disabled");
             addButtonFinished.classList.remove("button-active");
-            addButtonFinished.disabled = true; // Отключаем кнопку, если нет задач в In Progress
+            addButtonFinished.disabled = true;
         }
     }
 
     function loadTasks(userLogin) {
-        const tasks = Task.getTasksByUser(userLogin);
-        tasks.forEach((task) => {
-            const taskElement = document.createElement("p");
+        const tasks = Task.getTasksByUser (userLogin);
+        tasks.forEach((task) => const taskElement = document.createElement("p");
             taskElement.textContent = task.title;
             taskElement.setAttribute("draggable", "true");
             taskElement.classList.add("draggable");
-            taskElement.setAttribute("data-task", task.title); // Устанавливаем data-task
+            taskElement.setAttribute("data-task", task.title);
 
-            // Устанавливаем обработчик dragstart
             taskElement.addEventListener("dragstart", (e) => {
                 e.dataTransfer.setData("text/plain", taskElement.textContent);
-                e.dataTransfer.effectAllowed = "move"; // Разрешаем перемещение
+                e.dataTransfer.effectAllowed = "move";
             });
 
             if (task.status === "ready") {
-                readyContainer.appendChild(taskElement); // Добавляем в Ready
+                readyContainer.appendChild(taskElement);
             } else if (task.status === "inProgress") {
-                inProgressContainer.appendChild(taskElement); // Добавляем в In Progress
+                inProgressContainer.appendChild(taskElement);
             } else if (task.status === "finished") {
-                finishedContainer.appendChild(taskElement); // Добавляем в Finished
+                finishedContainer.appendChild(taskElement);
             }
         });
 
@@ -317,9 +288,9 @@ export function initializeTaskManager(userLogin) {
 
     function initializeDragAndDrop() {
         const containers = [
-            document.getElementById("readyTasks"),
-            document.getElementById("inProgressTasks"),
-            document.getElementById("finishedTasks"),
+            readyContainer,
+            inProgressContainer,
+            finishedContainer,
         ];
 
         containers.forEach((container) => {
@@ -329,29 +300,25 @@ export function initializeTaskManager(userLogin) {
 
             container.addEventListener("drop", (e) => {
                 e.preventDefault();
-                const taskTitle = e.dataTransfer.getData("text/plain"); // Получаем название задачи
-                const taskElement = document.querySelector(`p[data-task="${taskTitle}"]`); // Находим элемент задачи
+                const taskTitle = e.dataTransfer.getData("text/plain");
+                const taskElement = document.querySelector(`p[data-task="${taskTitle}"]`);
 
                 if (taskElement) {
-                    // Перемещаем задачу в новый контейнер
                     container.appendChild(taskElement);
 
-                    // Обновляем статус задачи в модели
-                    if (container.id === "readyTasks") {
+                    if (container === readyContainer) {
                         Task.updateTaskStatus(taskTitle, userLogin, "ready");
-                    } else if (container.id === "inProgressTasks") {
+                    } else if (container === inProgressContainer) {
                         Task.updateTaskStatus(taskTitle, userLogin, "inProgress");
-                    } else if (container.id === "finishedTasks") {
+                    } else if (container === finishedContainer) {
                         Task.updateTaskStatus(taskTitle, userLogin, "finished");
                     }
                     updateTaskCount(userLogin);
                 }
             });
         });
-         // Обновляем счетчик задач
     }
 
-        // Вызов функции в инициализации
-        loadTasks(userLogin);
-        initializeDragAndDrop();
-    }
+    loadTasks(userLogin);
+    initializeDragAndDrop();
+}
